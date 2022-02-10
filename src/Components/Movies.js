@@ -1,38 +1,42 @@
 import React, { useEffect, useState } from "react";
-import Image from '../banner.jpg'
+// import Image from '../banner.jpg'
 import axios from 'axios'
 import { Oval } from "react-loader-spinner";
 import Pagination from "./Pagination";
 
 function Movies() {
-   const [movies, setMovies] = useState([]);
-   const [page, setPage] = useState(1);
-   const[hover,setHover]=useState('');
-   const[favourites,setFav]=useState([])
-   function goAhead() {
-     setPage(page + 1);
-   }
-   function goBack() {
-     if (page > 1) setPage(page - 1);
-   }
+  const [movies, setMovies] = useState([]);
+  const [page, setPage] = useState(1);
+  const[hover,setHover]=useState('');
+  const[favourites,setFav]=useState([])
+  function goAhead() {
+    setPage(page + 1);
+  }
+  function goBack() {
+    if (page > 1) setPage(page - 1);
+  }
+  
+  useEffect(()=>{
+    axios.get(`https://api.themoviedb.org/3/trending/movie/week?api_key=0443b5cd22e858004bd293ad46f72042&page=${page}`
+      ).then((res) => {
+        // console.table(res.data.results);
+        setMovies(res.data.results);// rsults has array of objects representing 1 movie for 1 obj
+        let oldFav = localStorage.getItem('imdb') || []
+        oldFav = JSON.parse(oldFav);
+        setFav([...oldFav])
+      });
 
-    useEffect(()=>{
-      axios
-        .get(
-          `https://api.themoviedb.org/3/trending/movie/week?api_key=0443b5cd22e858004bd293ad46f72042&page=${page}`
-        )
-        .then((res) => {
-          // console.table(res.data.results);
-          setMovies(res.data.results);// rsults has array of objects representing 1 movie for 1 obj
-        });
-        
-     
     },[page])
     
     let addToFav =(movie)=>{
-      setFav(prev=>(
-         [...favourites,movie]
-      ))
+      let newArr = [...favourites, movie];
+      setFav(newArr);
+      localStorage.setItem('imdb',JSON.stringify(newArr))
+    }
+    let delmovie=(movie)=>{
+      let newArr = favourites.filter((m)=>m.id!==movie.id);
+      setFav(newArr)
+      localStorage.setItem('imdb',JSON.stringify(newArr))
     }
     
   return (
@@ -41,7 +45,7 @@ function Movies() {
         <div className=" mt-8 mb-8 font-bold text-2xl text-center ">
           Trending Movies
         </div>
-        {movies.length == 0 ? (
+        {movies.length === 0 ? (
           <div className="flex justify-center">
             <Oval
               className="flex justify-center"
@@ -55,7 +59,7 @@ function Movies() {
         ) : (
           <div className="flex flex-wrap justify-center ">
             {
-              movies.map((movie)=>{
+              movies?.map((movie)=>{
                   return (
                     <div
                       key={movie.id}
@@ -74,18 +78,20 @@ function Movies() {
                         setHover("");
                       }}
                     >
-                      {hover == movie.id && (
+                      {hover === movie.id && (
                         <>
-                          {favourites.find((m) => m.id == movie.id) ? (
+                          {favourites.find((m) => m.id === movie.id) ? (
                             <div
-                              className="absolute top-2 right-2 p-1 bg-gray-700 rounded-lg cursor-pointer"
-                              // onClick={() => addToFav(movie)}
+                              className="absolute top-2 right-2 p-1 bg-gray-700 rounded-lg cursor-pointer
+                              bg-opacity-50"
+                              onClick={() => delmovie(movie)}
                             >
                               ❌
                             </div>
                           ) : (
                             <div
-                              className="absolute top-2 right-2 p-1 bg-gray-700 rounded-lg cursor-pointer"
+                              className="absolute top-2 right-2 p-1 bg-gray-700 rounded-lg cursor-pointer
+                              bg-opacity-50"
                               onClick={() => addToFav(movie)}
                             >
                               🧡
@@ -97,7 +103,7 @@ function Movies() {
                         className="bg-gray-900
                         w-full text-white py-2
                         text-center rounded-b-xl
-                        font-bold "
+                        font-bold bg-opacity-60 "
                       >
                         {movie.title}
                       </div>
